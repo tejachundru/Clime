@@ -24,6 +24,7 @@ class ByLocationVC: UIViewController, CLLocationManagerDelegate {
 //    }
     
     
+    
     struct userDetails {
         
     }
