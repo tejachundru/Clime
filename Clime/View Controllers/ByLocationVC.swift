@@ -26,7 +26,7 @@ class ByLocationVC: UIViewController, CLLocationManagerDelegate {
     
     @IBOutlet weak var locationLabel: UILabel!
     
-    var uiArray:[String:Any]?
+    
     
     
     
@@ -75,17 +75,21 @@ class ByLocationVC: UIViewController, CLLocationManagerDelegate {
     {
         super.viewDidLoad()
         locationUpdation() //For Updating Current Location
-        climateActivity.stopAnimating()
-        //climateActivity.startAnimating()
-        uiArray = ["spinner":climateActivity,"temp":temperatureLabel,"description":descriptionLabel,"wind":windLabel,"location":locationLabel]
+        //climateActivity.stopAnimating()
+        climateActivity.startAnimating()
         deviceLocation.delegate = self
     }
     
     func updateUI(){
-            self.temperatureLabel.text = "\(self.temperature)"
-            self.descriptionLabel.text = self.weatherDescription
+        DispatchQueue.main.async {
+            
+            self.climateActivity.stopAnimating()
+            self.temperatureLabel.text = "\(Int(self.temperature))"
+            self.descriptionLabel.text = self.weatherDescription.capitalized
             self.windLabel.text = "\(self.windSpeed)"
-            self.locationLabel.text = self.placeName
+            self.locationLabel.text = self.placeName.capitalized
+        }
+        
     }
 
     func locationUpdation()
@@ -141,8 +145,7 @@ class ByLocationVC: UIViewController, CLLocationManagerDelegate {
                 let description = weatherDict["description"] as! String
                 print(description)
                 
-                
-                    // MARK: - windspeed
+                // MARK: - windspeed
                 //For Wind Speed
                 let windArry = dataDict["wind"] as! [String:Double]
                 let speed:Double = windArry["speed"]!
