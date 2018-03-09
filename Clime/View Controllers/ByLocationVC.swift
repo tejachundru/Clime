@@ -14,42 +14,79 @@ class ByLocationVC: UIViewController, CLLocationManagerDelegate {
     
     //Climate Details That are To Updated
     
-//    struct climateDetails
-//    {
-//        var temp = 0
-//        var description = ""
-//        var speed = 0
-//        var name = ""
-//
-//    }
+    //UI Elements
+    
+    @IBOutlet weak var climateActivity: UIActivityIndicatorView!
+    
+    @IBOutlet weak var temperatureLabel: UILabel!
+    
+    @IBOutlet weak var descriptionLabel: UILabel!
+    
+    @IBOutlet weak var windLabel: UILabel!
+    
+    @IBOutlet weak var locationLabel: UILabel!
+    
+    var uiArray:[String:Any]?
     
     
     
-    struct userDetails {
-        
-    }
-    
-    
+        var temperature:CGFloat = 0.0
+        var weatherDescription = ""
+        var windSpeed:Double = 0
+        var placeName = ""
+
+   
     
     // Some Important variable Needed
     let appId = "46df8e428c6e96c3f0bca5da94e7af7d"
-    let deviceLocation = CLLocationManager() //Location Manager
+    var deviceLocation = CLLocationManager() //Location Manager
     
     //Coordinates
     var devicelatitude = 0.0
     var devicelongitude = 0.0
+    var buttonframe:CGRect?
+    
+   
+    @IBOutlet weak var climateByLocationBtn: UIButton!
+    
+    @IBAction func climateByLocationClicked(_ sender: Any)
+    {
+        
+        self.buttonframe = self.climateByLocationBtn.frame
+        UIView.animate(withDuration: 0.7, animations:
+            
+        {
+            self.climateByLocationBtn.frame = self.view.frame
+        })
+        { (compltedAnimaton) in
+            
+            let ByLocationVC = self.storyboard?.instantiateViewController(withIdentifier: "BySearchVC") as! BySearchVC
+            self.navigationController?.pushViewController(ByLocationVC, animated: false)
+        }
+    }
     
     
-    
+    override func viewDidDisappear(_ animated: Bool)
+    {
+        self.climateByLocationBtn.frame = self.buttonframe!
+    }
     
     override func viewDidLoad()
     {
         super.viewDidLoad()
-        
         locationUpdation() //For Updating Current Location
-        
+        climateActivity.stopAnimating()
+        //climateActivity.startAnimating()
+        uiArray = ["spinner":climateActivity,"temp":temperatureLabel,"description":descriptionLabel,"wind":windLabel,"location":locationLabel]
+        deviceLocation.delegate = self
     }
     
+    func updateUI(){
+            self.temperatureLabel.text = "\(self.temperature)"
+            self.descriptionLabel.text = self.weatherDescription
+            self.windLabel.text = "\(self.windSpeed)"
+            self.locationLabel.text = self.placeName
+    }
 
     func locationUpdation()
     {
@@ -59,45 +96,69 @@ class ByLocationVC: UIViewController, CLLocationManagerDelegate {
         deviceLocation.startUpdatingLocation()
     }
 
-    //
     func updateClimateDetails()
     {
         /*
          Format For the Url OPEN WEATHER API
-        http://api.openweathermap.org/data/2.5/weather?lat=35&lon=139&appid=46df8e428c6e96c3f0bca5da94e7af7d
- 
+        http://api.openweathermap.org/data/2.5/weather?lat=17.450404&lon=78.387166&appid=46df8e428c6e96c3f0bca5da94e7af7d
         */
         let climateURLString = "http://api.openweathermap.org/data/2.5/weather?lat=\(devicelatitude)&lon=\(devicelongitude)&appid=\(appId)"
         //latitude And longitude Are Added , Appid is Api Key of openWeather
         let climateURL = URL(string: climateURLString)
-        
-        
+      
         URLSession.shared.dataTask(with: climateURL!)
         {
             //Completion Clousure
             (data, reponse, error) in
             
-            print("The Data \n\(String(describing: data))")
-            print("The Response is \(String(describing: reponse))")
-            print(" The Error is \(String(describing: error))")
-            
-            
+            do{
+                let dataDict = try JSONSerialization.jsonObject(with: data!, options: JSONSerialization.ReadingOptions.allowFragments) as! [String:Any]
+                //print(dataDict)
+                //For Present Temperature
+                let tempDetailsDict:[String:CGFloat] = dataDict["main"] as! [String : CGFloat]
+                //print(tempDetailsDict)
+                //Herw Temp Details Dict is ---->  ["humidity": 39.0, "temp_min": 301.15, "temp_max": 302.15, "temp": 301.63, "pressure": 1017.0]
+                
+                // MARK: - temperature
+                var placeTemperature:CGFloat = tempDetailsDict["temp"]!
+                //This is in Kelvin So Conversion Needed To Celsius
+                // Celsius  = kelvinTemp - 273.15
+                //so
+                placeTemperature = placeTemperature - 273.15
+                print(placeTemperature)
+                
+                // MARK: - Place
+                //For Place
+                let place:String = dataDict["name"] as! String
+                print(place)
+                
+                // MARK: - weather Description
+                //For weather Description
+                //This is Array Of Dict
+                let weatherArry = dataDict["weather"] as! [[String:Any]]
+                //print(weatherArry)
+                let weatherDict = weatherArry[0]
+                let description = weatherDict["description"] as! String
+                print(description)
+                
+                
+                    // MARK: - windspeed
+                //For Wind Speed
+                let windArry = dataDict["wind"] as! [String:Double]
+                let speed:Double = windArry["speed"]!
+                print(speed)
+                //For U
+                self.temperature = placeTemperature
+                self.weatherDescription = description
+                self.windSpeed = speed
+                self.placeName = place
+                self.updateUI()
+                
+            }catch{
+                        print("Incoming data Error")
+            }
         }.resume()
-        
-        
-        
-        
     }
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     
     
     
@@ -113,7 +174,7 @@ class ByLocationVC: UIViewController, CLLocationManagerDelegate {
             devicelatitude = inputLocationArray.coordinate.latitude
             devicelongitude = inputLocationArray.coordinate.longitude
             deviceLocation.stopUpdatingLocation() //Location updation Stops
-            
+            deviceLocation.delegate = nil
             //Calling The Climate To Update as Coordinates are determined
             updateClimateDetails()
         }
@@ -122,7 +183,11 @@ class ByLocationVC: UIViewController, CLLocationManagerDelegate {
     
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
         print("Location unavaliable error")
+        locationLabel.text = "Location Unavaliable"
     }
+    
+   
+    
     
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
