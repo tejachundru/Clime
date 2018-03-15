@@ -20,4 +20,4 @@ This Shows The
 ------> Cuurent Location of the User ..
 
 
-![image](https://{https://github.com/tejachundru/Clime/blob/master/Clime.png})
+![image](https://{https://raw.githubusercontent.com/tejachundru/Clime/master/Clime.png})
